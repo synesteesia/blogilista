@@ -4,6 +4,6 @@ Content-Type: application/json
 {
     "title": "Adventures of Minney Mouse",
     "author": "Donald Duck",
-    "url": "https://advofmickey.mouse",
+    "url": "https://advofminney.mouse",
     "likes": 3
 }
