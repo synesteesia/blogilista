@@ -1,0 +1,9 @@
+POST http://127.0.0.1:3003/api/blogs
+Content-Type: application/json
+
+{
+    "title": "Adventures of Minney Mouse",
+    "author": "Donald Duck",
+    "url": "https://advofmickey.mouse",
+    "likes": 3
+}
