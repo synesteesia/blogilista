@@ -1,0 +1,10 @@
+POST http://127.0.0.1:3003/api/blogs
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6Ik1pa2tvIiwiaWQiOiI1ZjI4NjdlNWFhMzYzYzUwMGVjNDUxZWEiLCJpYXQiOjE1OTY0ODM1ODZ9.7d8WvFXePF2pCf2mFJN4ZX66G3A66dKy8s95ksW-stA
+Content-Type: application/json
+
+{
+    "title": "Trainspotting",
+    "author": "Irvine Welsh",
+    "url": "https://druggedwelsh.br",
+    "likes": 10
+}

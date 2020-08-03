@@ -3,16 +3,21 @@ const usersRouter = require('express').Router()
 const User = require('../models/user')
 
 usersRouter.post('/', async (request, response) => {
-    if (request.body.username === undefined || request.body.username === null || request.body.username.length < 3) {
-        response.status(400).json({ error: "Username missing or too short" })
-        return
-      }
-    
-      if (request.body.password === undefined || request.body.password === null || request.body.password.length < 3) {
-        response.status(400).json({ error: "password missing or too short" })
-        return
-      }
   const body = request.body
+  if (body.username === undefined || body.username === null || body.username.length < 3) {
+    response.status(400).json({ error: "Username missing or too short" })
+    return
+  }
+
+  if (body.password === undefined || body.password === null || body.password.length < 3) {
+    response.status(400).json({ error: "password missing or too short" })
+    return
+  }
+
+  const existingUser = await User.findOne({ username: body.username })
+  if (existingUser) {
+    return response.status(400).json({ error: 'ValidationError: expected `username` to be unique' })
+  }
 
   const saltRounds = 10
   const passwordHash = await bcrypt.hash(body.password, saltRounds)
@@ -29,8 +34,9 @@ usersRouter.post('/', async (request, response) => {
 })
 
 usersRouter.get('/', async (request, response) => {
-    const users = await User.find({})
-    response.json(users.map(u => u.toJSON()))
-  })
+  const users = await User
+    .find({}).populate('blogs', { title: 1, author: 1 })
+  response.json(users.map(u => u.toJSON()))
+})
 
 module.exports = usersRouter

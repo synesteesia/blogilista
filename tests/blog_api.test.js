@@ -66,7 +66,10 @@ const usersInDb = async () => {
     return users.map(u => u.toJSON())
 }
 
-
+const testUser = {
+    username: 'Mikko',
+    password: 'Password'
+}
 
 beforeEach(async () => {
     await Blog.deleteMany({})
@@ -75,6 +78,12 @@ beforeEach(async () => {
         .map(blog => new Blog(blog))
     const promiseArray = blogObjects.map(blog => blog.save())
     await Promise.all(promiseArray)
+
+    await User.deleteMany({})
+
+    await api
+        .post('/api/users/')
+        .send(testUser)
 })
 
 
@@ -114,15 +123,17 @@ test('id is defined', async () => {
 })
 
 test('post works', async () => {
+    const tokenResponse = await api.post('/api/login').send(testUser)
     const newBlog = {
         title: "Test",
         author: "Tester",
         url: "http://blog.testing.com",
-        likes: 9,
+        likes: 9
     }
 
     await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenResponse.body.token}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -135,7 +146,31 @@ test('post works', async () => {
     expect(titles).toContain('Test')
 })
 
+test('post fails without authorization', async () => {
+    const newBlog = {
+        title: "Test",
+        author: "Tester",
+        url: "http://blog.testing.com",
+        likes: 9
+    }
+
+    const errorResponse = await api
+        .post('/api/blogs')
+        .send(newBlog)
+        .expect(401)
+        .expect('Content-Type', /application\/json/)
+
+    const response = await api.get('/api/blogs')
+
+    const titles = response.body.filter(r => r.title === 'Test')
+
+    expect(errorResponse.body.error).toEqual('token missing or invalid')
+    expect(response.body).toHaveLength(initialBlogs.length)
+    expect(titles).toHaveLength(0)
+})
+
 test('likes are 0 by default', async () => {
+    const tokenResponse = await api.post('/api/login').send(testUser)
     const newBlog = {
         title: "Test",
         author: "Tester",
@@ -144,6 +179,7 @@ test('likes are 0 by default', async () => {
 
     await api
         .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenResponse.body.token}`)
         .send(newBlog)
         .expect(201)
         .expect('Content-Type', /application\/json/)
@@ -197,17 +233,55 @@ test('url required', async () => {
 })
 
 test('delete works', async () => {
+    const tokenResponse = await api.post('/api/login').send(testUser)
+    const newBlog = {
+        title: "Test",
+        author: "Tester",
+        url: "http://blog.testing.com",
+        likes: 9
+    }
+    const blog = await api
+        .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenResponse.body.token}`)
+        .send(newBlog)
 
     await api
-        .delete('/api/blogs/5a422bc61b54a676234d17fc')
+        .delete(`/api/blogs/${blog.body.id}`)
+        .set('Authorization', `Bearer ${tokenResponse.body.token}`)
         .expect(204)
 
     const response = await api.get('/api/blogs')
 
-    const title = response.body.filter(r => r.title === "Type wars")
+    const title = response.body.filter(r => r.title === "Test")
 
-    expect(response.body).toHaveLength(initialBlogs.length - 1)
+    expect(response.body).toHaveLength(initialBlogs.length)
     expect(title).toHaveLength(0)
+})
+
+test('delete fails without authorization', async () => {
+    const tokenResponse = await api.post('/api/login').send(testUser)
+    const newBlog = {
+        title: "Test",
+        author: "Tester",
+        url: "http://blog.testing.com",
+        likes: 9
+    }
+    const blog = await api
+        .post('/api/blogs')
+        .set('Authorization', `Bearer ${tokenResponse.body.token}`)
+        .send(newBlog)
+
+    const errorResponse = await api
+        .delete(`/api/blogs/${blog.body.id}`)
+        .expect(401)
+
+    const response = await api.get('/api/blogs')
+
+    const title = response.body.filter(r => r.title === "Test")
+
+    expect(errorResponse.body.error).toEqual('token missing or invalid')
+    expect(response.body).toHaveLength(initialBlogs.length + 1)
+    expect(title).toHaveLength(1)
 })
 
 test('update works', async () => {
