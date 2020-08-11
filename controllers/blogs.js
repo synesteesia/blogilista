@@ -35,10 +35,10 @@ blogRouter.post('/', async (request, response) => {
     url: request.body.url,
     likes: request.body.likes,
     user: user._id
-
   })
 
-  const result = await blog.save()
+  const savedBlog = await blog.save()
+  const result = await Blog.findById(savedBlog._id).populate('user', { username: 1, name: 1 })
 
   user.blogs = user.blogs.concat(result)
   await user.save()
@@ -64,13 +64,19 @@ blogRouter.delete('/:id', async (request, response) => {
 })
 
 blogRouter.put('/:id', async (request, response) => {
+  const decodedToken = request.token ? jwt.verify(request.token, process.env.SECRET) : null
+  if (!request.token || !decodedToken.id) {
+    return response.status(401).json({ error: 'token missing or invalid' })
+  }
+  const user = await User.findById(decodedToken.id)
   const body = request.body
 
   const blog = {
     title: body.title,
     author: body.author,
     url: body.url,
-    likes: body.likes
+    likes: body.likes,
+    user: user._id
   }
 
   const result = await Blog.findByIdAndUpdate(request.params.id, blog, { new: true })
